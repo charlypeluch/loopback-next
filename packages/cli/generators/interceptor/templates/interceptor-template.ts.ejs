@@ -1,0 +1,28 @@
+import {
+  /* inject, */
+  asGlobalInterceptor,
+  bind,
+  Interceptor,
+  Provider,
+} from '@loopback/context';
+
+/**
+ * This class will be bound to the application as a global `Interceptor` during
+ * `boot`
+ */
+@bind(asGlobalInterceptor('<%= group %>'))
+export class <%= className %> implements Provider<Interceptor> {
+  /*
+  constructor() {}
+  */
+
+  value() {
+    const interceptor: Interceptor = async (invocationCtx, next) => {
+      // Add pre-invocation logic here
+      const result = await next();
+      // Add post-invocation logic here
+      return result;
+    }
+    return interceptor;
+  }
+}

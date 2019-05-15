@@ -326,6 +326,10 @@ children:
   - title: 'Life cycle observer generator'
     url: Life-cycle-observer-generator.html
     output: 'web, pdf'
+    
+  - title: 'Global interceptor generator'
+    url: Global-interceptor-generator.html
+    output: 'web, pdf'
 
   - title: 'Extension generator'
     url: Extension-generator.html
