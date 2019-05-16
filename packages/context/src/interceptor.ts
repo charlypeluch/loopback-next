@@ -18,7 +18,11 @@ import {filterByTag} from './binding-filter';
 import {BindingAddress} from './binding-key';
 import {sortBindingsByPhase} from './binding-sorter';
 import {Context} from './context';
-import {ContextBindings, ContextTags} from './keys';
+import {
+  ContextBindings,
+  ContextTags,
+  GLOBAL_INTERCEPTOR_NAMESPACE,
+} from './keys';
 import {
   transformValueOrPromise,
   tryWithFinally,
@@ -201,7 +205,9 @@ export class InvocationContext extends Context {
  */
 export function asGlobalInterceptor(group?: string): BindingTemplate {
   return binding => {
-    binding.tag(ContextTags.GLOBAL_INTERCEPTOR);
+    binding
+      .tag(ContextTags.GLOBAL_INTERCEPTOR)
+      .tag({[ContextTags.NAMESPACE]: GLOBAL_INTERCEPTOR_NAMESPACE});
     if (group) binding.tag({[ContextTags.GLOBAL_INTERCEPTOR_GROUP]: group});
   };
 }

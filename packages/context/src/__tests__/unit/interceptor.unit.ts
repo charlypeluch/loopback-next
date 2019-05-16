@@ -8,6 +8,8 @@ import {
   asGlobalInterceptor,
   Context,
   ContextBindings,
+  ContextTags,
+  GLOBAL_INTERCEPTOR_NAMESPACE,
   Interceptor,
   InterceptorOrKey,
   InvocationContext,
@@ -138,6 +140,19 @@ describe('globalInterceptors', () => {
       'globalInterceptors.authInterceptor',
       'globalInterceptors.logInterceptor',
     ]);
+  });
+
+  it('applies asGlobalInterceptor', () => {
+    const binding = ctx
+      .bind('globalInterceptors.authInterceptor')
+      .to(authInterceptor)
+      .apply(asGlobalInterceptor('auth'));
+
+    expect(binding.tagMap).to.eql({
+      [ContextTags.NAMESPACE]: GLOBAL_INTERCEPTOR_NAMESPACE,
+      [ContextTags.GLOBAL_INTERCEPTOR]: ContextTags.GLOBAL_INTERCEPTOR,
+      [ContextTags.GLOBAL_INTERCEPTOR_GROUP]: 'auth',
+    });
   });
 
   class MyController {
