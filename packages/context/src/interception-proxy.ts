@@ -4,7 +4,8 @@
 // License text available at https://opensource.org/licenses/MIT
 
 import {Context} from './context';
-import {InvocationArgs, invokeMethodWithInterceptors} from './interceptor';
+import {InvocationArgs} from './handler-chain';
+import {invokeMethodWithInterceptors} from './interceptor';
 import {ValueOrPromise} from './value-promise';
 
 /**

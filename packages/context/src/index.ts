@@ -13,6 +13,7 @@ export * from './binding-sorter';
 export * from './context';
 export * from './context-observer';
 export * from './context-view';
+export * from './handler-chain';
 export * from './inject';
 export * from './interception-proxy';
 export * from './interceptor';

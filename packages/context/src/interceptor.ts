@@ -15,29 +15,19 @@ import * as assert from 'assert';
 import * as debugFactory from 'debug';
 import {Binding, BindingTemplate} from './binding';
 import {filterByTag} from './binding-filter';
-import {BindingAddress} from './binding-key';
 import {sortBindingsByPhase} from './binding-sorter';
 import {Context} from './context';
-import {ContextBindings, ContextTags} from './keys';
 import {
-  transformValueOrPromise,
-  tryWithFinally,
-  ValueOrPromise,
-} from './value-promise';
+  Handler,
+  HandlerOrKey,
+  InvocationArgs,
+  InvocationResult,
+  invokeHandlers,
+} from './handler-chain';
+import {ContextBindings, ContextTags} from './keys';
+import {tryWithFinally, ValueOrPromise} from './value-promise';
 const debug = debugFactory('loopback:context:interceptor');
 const getTargetName = DecoratorFactory.getTargetName;
-
-/**
- * Array of arguments for a method invocation
- */
-// tslint:disable-next-line:no-any
-export type InvocationArgs = any[];
-
-/**
- * Return value for a method invocation
- */
-// tslint:disable-next-line:no-any
-export type InvocationResult = any;
 
 /**
  * A type for class or its prototype
@@ -209,23 +199,13 @@ export function asGlobalInterceptor(group?: string): BindingTemplate {
 /**
  * Interceptor function to intercept method invocations
  */
-export interface Interceptor {
-  /**
-   * @param context Invocation context
-   * @param next A function to invoke next interceptor or the target method
-   * @returns A result as value or promise
-   */
-  (
-    context: InvocationContext,
-    next: () => ValueOrPromise<InvocationResult>,
-  ): ValueOrPromise<InvocationResult>;
-}
+export interface Interceptor extends Handler<InvocationContext> {}
 
 /**
  * Interceptor function or binding key that can be used as parameters for
  * `@intercept()`
  */
-export type InterceptorOrKey = BindingAddress<Interceptor> | Interceptor;
+export type InterceptorOrKey = HandlerOrKey<InvocationContext>;
 
 /**
  * Metadata key for method-level interceptors
@@ -388,66 +368,10 @@ export function invokeMethodWithInterceptors(
   return tryWithFinally(
     () => {
       const interceptors = invocationCtx.loadInterceptors();
-      return invokeInterceptors(invocationCtx, interceptors);
+      const targetMethodInvoker = () => invocationCtx.invokeTargetMethod();
+      interceptors.push(targetMethodInvoker);
+      return invokeHandlers(invocationCtx, interceptors);
     },
     () => invocationCtx.close(),
   );
-}
-
-/**
- * Invoke the interceptor chain
- * @param context Context object
- * @param interceptors An array of interceptors
- */
-function invokeInterceptors(
-  context: InvocationContext,
-  interceptors: InterceptorOrKey[],
-): ValueOrPromise<InvocationResult> {
-  let index = 0;
-  return next();
-
-  /**
-   * Invoke downstream interceptors or the target method
-   */
-  function next(): ValueOrPromise<InvocationResult> {
-    // No more interceptors
-    if (index === interceptors.length) {
-      return context.invokeTargetMethod();
-    }
-    return invokeNextInterceptor();
-  }
-
-  /**
-   * Invoke downstream interceptors
-   */
-  function invokeNextInterceptor(): ValueOrPromise<InvocationResult> {
-    const interceptor = interceptors[index++];
-    const interceptorFn = loadInterceptor(interceptor);
-    return transformValueOrPromise(interceptorFn, fn => {
-      /* istanbul ignore if */
-      if (debug.enabled) {
-        debug(
-          'Invoking interceptor %d (%s) on %s',
-          index - 1,
-          fn.name,
-          getTargetName(context.target, context.methodName),
-          context.args,
-        );
-      }
-      return fn(context, next);
-    });
-  }
-
-  /**
-   * Return the interceptor function or resolve the interceptor function as a
-   * binding from the context
-   * @param interceptor Interceptor function or binding key
-   */
-  function loadInterceptor(interceptor: InterceptorOrKey) {
-    if (typeof interceptor === 'function') return interceptor;
-    debug('Resolving interceptor binding %s', interceptor);
-    return context.getValueOrPromise(interceptor) as ValueOrPromise<
-      Interceptor
-    >;
-  }
 }
